@@ -1,0 +1,76 @@
+# Project configuration. Single source of truth for all scripts.
+project:
+  name: jolnon
+  seed: 42
+
+paths:
+  data_dir: /root/code/jolnon/data
+  top_json: /root/code/jolnon/data/top.json
+  real_user_query: /root/code/jolnon/data/real_user_query.txt
+  images_dir: /root/code/jolnon/data/images
+  split_train: /root/code/jolnon/data/split_train.json
+  split_test: /root/code/jolnon/data/split_test.json
+  augment_prompt: /root/code/jolnon/prompts/augment_final.txt
+  train_pairs: /root/code/jolnon/data/train_pairs.jsonl
+  train_pairs_final: /root/code/jolnon/data/train_pairs_final.jsonl
+  eval_queries: /root/code/jolnon/data/eval_queries.jsonl
+  vision_emb: /root/code/jolnon/data/vision_emb.npy
+  vision_idx: /root/code/jolnon/data/vision_idx.json
+  vision_patches: /root/code/jolnon/data/vision_patches.npy
+  vision_patches_idx: /root/code/jolnon/data/vision_patches_idx.json
+  checkpoints_dir: /root/code/jolnon/checkpoints
+  logs_dir: /root/code/jolnon/logs
+  output_dir: /root/code/jolnon/output
+
+split:
+  train_ratio: 0.8
+  # 80/20 product-level split. test gallery = 621 products.
+
+augment:
+  provider: upstage_solar_pro3
+  model_id: solar-pro3
+  base_url: https://api.upstage.ai/v1
+  reasoning_effort: high
+  queries_per_product: 3
+  concurrency: 12
+  retries: 3
+
+backbone:
+  model_id: google/siglip2-base-patch16-384
+  image_size: 384
+  text_max_length: 64
+  num_patches: 576  # 24x24 at patch16-384
+
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - out_proj
+  apply_to: text  # text encoder only; vision frozen
+
+train:
+  batch_size: 256
+  lr: 1.0e-4
+  epochs: 10
+  warmup_ratio: 0.1
+  scheduler: cosine
+  precision: bf16
+  loss: sigmoid
+
+eval:
+  num_queries: 30
+  difficulty_bands:
+    short_ambiguous: 10
+    medium: 10
+    long_specific: 10
+  metrics:
+    - R@10
+    - R@5
+    - MRR
+
+runtime:
+  cuda_visible_devices: "4"
