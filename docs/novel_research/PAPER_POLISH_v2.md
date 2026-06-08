@@ -10,7 +10,7 @@
 
 본 연구는 이 격차를 줄이는 개입을 학습·추론 양면에서 검증한다. 학습 시점에는 LLM이 생성한 사용자-스타일 합성 쿼리로 텍스트 인코더만 정렬한다(**텍스트-only LoRA 정렬**). 추론 시점에는 1차 dense 검색의 상위 후보 안에서만 한국어 메타데이터(상품명·브랜드·캡션)의 BM25 어휘 점수를 dense 점수에 가중 합산하여, 후보 밖 오검출 없이 색·아이템·그래픽 같은 어휘 단서를 보강한다(**후보보존 BM25 융합**). 나아가 학습용으로 만든 합성 쿼리 뱅크를 추론 시점 분포 prior로 (주 방법 대비) 추가 비용 없이 재활용한다(**뱅크-prior 보정**).
 
-텍스트-only LoRA 정렬만으로도 실제 사용자 쿼리에서 zero-shot을 유의하게 능가하며(MRR 0.571→0.684, sign-test $p{=}0.013$), 같은 향상은 검정력이 높은 대규모 합성 평가에서도 재현된다($p\approx0$). 여기에 후보보존 BM25 융합과 뱅크-prior 보정을 쌓은 전체 파이프라인은 실쿼리 MRR을 최대 0.760, R@1을 0.47에서 0.70까지 끌어올리며 zero-shot을 유의하게 능가한다($p<0.01$). 다만 LoRA 이후 단계의 개별 증분은 $N{=}30$ gold에서 통계적으로 구분되지 않으므로, 본 연구가 강하게 방어하는 핵심 효과는 분포 정렬(LoRA) 단계다. 또한 미정렬 상태의 훨씬 큰 현대 VLM 임베더 GME-Qwen2VL-2B도 본 도메인에서 이 파이프라인을 넘지 못해, 좁은 도메인에서는 임베더 규모보다 도메인 분포 정렬이 더 효과적임을 시사한다. 본 연구는 zero-shot을 일관되게 능가하는 단순·경량 분포 정렬 레시피를 제시한다.
+텍스트-only LoRA 정렬만으로도 실제 사용자 쿼리에서 zero-shot을 유의하게 능가하며(MRR 0.571→0.684, sign-test $p{=}0.013$), 같은 향상은 검정력이 높은 대규모 합성 평가에서도 재현된다($p\approx0$). 여기에 후보보존 BM25 융합과 뱅크-prior 보정을 쌓은 전체 파이프라인은 실쿼리 MRR을 최대 0.760, R@1을 0.47에서 0.70까지 끌어올린다(전체 파이프라인 vs zero-shot의 paired sign-test $p<0.01$). 다만 LoRA 이후 단계의 개별 증분은 $N{=}30$ gold에서 통계적으로 구분되지 않으므로, 본 연구가 강하게 방어하는 핵심 효과는 분포 정렬(LoRA) 단계다. 또한 미정렬 상태의 훨씬 큰 현대 VLM 임베더 GME-Qwen2VL-2B도 본 도메인에서 이 파이프라인을 넘지 못해, 좁은 도메인에서는 임베더 규모보다 도메인 분포 정렬이 더 효과적임을 시사한다. 본 연구는 zero-shot을 일관되게 능가하는 단순·경량 분포 정렬 레시피를 제시한다.
 
 ---
 
@@ -118,7 +118,7 @@ LoRA 정렬 이후에도 대조학습 임베딩 공간에는 검색을 저해하
 
 본 절은 세 질문(Q1–Q3)을 분포 정렬의 단계별 누적 비교(add-one-in)로 답한다. zero-shot 기본 점수 위에 텍스트-LoRA → BM25(하이브리드) → 뱅크-prior 순으로 한 번에 한 구성요소만 더하며, 표 1은 동일 하니스·동일 검증 선택 절차의 결과다. 모든 +BM25 행은 동일한 matched-grid BM25 격자($w\in[0.05,0.5]$, $n\in\{10,20,50\}$)로 검증 선택되어 apples-to-apples 비교를 이룬다.
 
-**표 1. 분포 정렬의 단계별 누적 비교(add-one-in)(MRR↑; LoRA 인코더).** 한 행을 추가할 때마다 한 구성요소만 더한다. 마지막 두 행은 동일 matched-grid 하이브리드(0.721) 위에 올린 뱅크-prior 보정의 두 변형이다. 굵게 표시한 셀은 해당 열의 최고 점추정이다. gold 열의 모든 행은 CI ≈ ±0.13으로 서로 통계적으로 구분되지 않으므로, gold 최고 점추정 강조는 순위가 아니라 위치만 나타낸다.
+**표 1. 분포 정렬의 단계별 누적 비교(add-one-in)(MRR↑; LoRA 인코더).** 한 행을 추가할 때마다 한 구성요소만 더한다. 마지막 두 행은 동일 matched-grid 하이브리드(0.721) 위에 올린 뱅크-prior 보정의 두 변형이다. 굵게 표시한 셀은 해당 열의 최고 점추정이다. gold 열은 행마다 CI가 ≈±0.13으로 넓어 LoRA 이후 인접 단계들의 점추정 순위는 통계적으로 단정할 수 없다(굵은 강조는 순위가 아니라 위치만 나타냄). 단, zero-shot 대비 LoRA 및 전체 파이프라인의 paired 향상은 유의하다(§5 관찰 1).
 
 | 단계 (add-one-in) | gold MRR (95% CI) | gold R@1 | gold R@5 | gold R@10 | 합성(N=1706) MRR | 합성 vs 하이브리드 (sign-$p$) |
 |---|---:|---:|---:|---:|---:|---:|
@@ -134,7 +134,7 @@ LoRA 정렬 이후에도 대조학습 임베딩 공간에는 검색을 저해하
 
 **관찰 2 — 후보보존 BM25 융합이 검색을 더 끌어올린다(Q1).** 후보보존 BM25 융합은 동일 LoRA 위에서 gold MRR을 0.684→0.721($+0.037$)로, 고검정력 합성 MRR을 0.568→0.903($+0.334$)으로 끌어올린다 — 후자는 paired bootstrap $p\approx0$로 통계적으로 유의하다. 한국어 메타데이터의 색·아이템·그래픽 char n-gram이 시각 임베딩이 놓친 lexical 단서를 보강하기 때문이다. 다만 합성 쿼리는 메타데이터에서 파생되어 어휘가 겹치므로 합성 절대치에는 부분적 순환성이 섞여 있어, 그 값은 낙관적 상한으로 읽고 비순환 gold(+0.037)로 교차검증한다.
 
-**관찰 3 — 뱅크-prior 보정이 추가 비용 없이 최고 성능을 더한다(Q2).** matched-grid 하이브리드(0.721) 위에 뱅크-prior 보정을 얹으면 gold 점추정이 더 올라, CSLS 변형이 ladder 최고인 gold MRR 0.760(R@1 0.70)에 도달하고 modality-gap 변형도 0.734에 이른다. 고검정력 합성에서는 modality-gap 변형이 통계적으로 유의한 추가 이득을 준다(하이브리드 대비 $+0.0057$, sign-test $p<0.01$). 즉 학습 자산을 재활용하는 이 보정은 추가 비용 없이 gold 점추정을 ladder 최고로 끌어올리며, 고검정력 평가에서 그 이득의 유의성까지 확인된다(보정별 전체 분해는 §6.1).
+**관찰 3 — 뱅크-prior 보정이 추가 비용 없이 최고 성능을 더한다(Q2).** matched-grid 하이브리드(0.721) 위에 뱅크-prior 보정을 얹으면 gold 점추정이 더 올라, CSLS 변형이 gold MRR 0.760(R@1 0.70)에 도달하고 modality-gap 변형도 0.734에 이른다. 고검정력 합성에서는 modality-gap 변형이 통계적으로 유의한 추가 이득을 준다(하이브리드 대비 $+0.0057$, sign-test $p<0.01$). 즉 학습 자산을 재활용하는 이 보정은 추가 비용 없이 gold 점추정을 더 끌어올리며, 고검정력 평가에서 그 이득의 유의성까지 확인된다(보정별 전체 분해는 §6.1).
 
 ---
 
@@ -164,9 +164,9 @@ LoRA 정렬 이후에도 대조학습 임베딩 공간에는 검색을 저해하
 | QB-Norm(dis) | 0.705 | 0.909 | $+0.0065$ ($p{=}0.09$; 96/73) n.s. |
 | QB-Norm(mul) | 0.764 | 0.902 | $-0.0001$ ($p{=}1.0$; 44/45) n.s. |
 
-**관찰: 보정 효과가 작은 이유는 메커니즘에서 설명된다.** modality-gap 중심화는 텍스트·이미지에 공통으로 깔린 single common-mode 방향을 제거하고 재정규화하므로, 점수의 절대 척도가 아니라 *근접한 동점들의 순서*만 재배열한다. CSLS는 각 이미지가 뱅크 쿼리 전반에 대해 갖는 generic-popularity 기준선(hub 통계)을 점수에서 차감하여 hub 이미지를 억제한다. 두 연산자 모두 generic·hub 성향의 상품을 down-weight한다는 점에서 부분적으로 중복이며, 따라서 둘이 줄 수 있는 이득의 상한이 서로 겹친다. 핵심은 *room이 작다*는 것이다: 잘 정렬된 LoRA 모델에서는 잔여 gap·hubness가 이미 작아 보정이 손댈 여지가 작다. 이는 정렬이 약한 zero-shot 모델에서 보정의 점추정 이득이 더 크다는 사실로 확인된다 — zero-shot dense에서 QB-Norm(mul)은 gold $0.571{\to}0.651$($+0.08$), 합성 $0.431{\to}0.471$($+0.04$)로, LoRA-dense에서보다 훨씬 큰 이득을 준다. 보정은 정렬이 나쁠수록 도움이 크고, LoRA가 그 여지를 줄인다.
+**관찰: 보정 효과가 작은 이유는 메커니즘에서 설명된다.** modality-gap 중심화는 두 양상에 공통으로 깔린 단일 방향을 제거하고 재정규화하므로, 점수의 절대 척도가 아니라 *근접한 동점들의 순서*만 재배열한다. CSLS는 각 이미지(및 쿼리)가 뱅크 전반에 대해 갖는 일반적 인기도 기준선을 점수에서 차감하여 인기 많은 hub 이미지를 억제한다(§3.4). 두 연산자 모두 일반적·hub 성향의 상품의 가중치를 낮춘다는 점에서 부분적으로 중복이며, 따라서 둘이 줄 수 있는 이득의 상한이 서로 겹친다. 핵심은 *개선 여지가 작다*는 것이다: 잘 정렬된 LoRA 모델에서는 잔여 gap·hubness가 이미 작아 보정이 손댈 여지가 작다. 이는 정렬이 약한 zero-shot 모델에서 보정의 점추정 이득이 더 크다는 사실로 확인된다 — zero-shot dense에서 QB-Norm(mul)은 gold $0.571{\to}0.651$($+0.08$), 합성 $0.431{\to}0.471$($+0.04$)로, LoRA-dense에서보다 훨씬 큰 이득을 준다. 보정은 정렬이 나쁠수록 도움이 크고, LoRA가 그 여지를 줄인다.
 
-그 위에 BM25가 들어오면 잔여 이득은 더 줄어든다. BM25는 dense가 놓친 색·아이템·그래픽 단서를 lexical 채널로 보강하는 *더 강한 레버*이고, dense 채널의 보정이 회복하려던 신호(generic 항목 down-weight, 정답 끌어올림)와 상당 부분 겹치므로, 하이브리드 위에서 보정의 한계 이득은 dense에서의 $+0.016$이 $+0.0057$ 이하로 수축한다. 결과적으로 하이브리드 위에서 유의하게 남는 것은 modality-gap 변형뿐이며, gold에서는 모든 보정이 ±0.13 CI 안에서 서로 구분되지 않는다(QB-Norm(mul)이 gold 0.764로 점추정 최고이지만 합성에서는 부호조차 사라진다). 이로부터 본 절의 thesis가 나온다: 남은 한계는 *모델 용량이나 추가 모듈*이 아니라 텍스트 측 분포 정렬에 있으며, 소폭 효과의 판별은 gold($N{=}30$)의 낮은 검정력에 제약된다.
+그 위에 BM25가 들어오면 잔여 이득은 더 줄어든다. BM25는 dense가 놓친 색·아이템·그래픽 단서를 lexical 채널로 보강하는 *더 강한 레버*이고, dense 채널의 보정이 회복하려던 신호(일반적 항목의 가중치 낮추기, 정답 끌어올림)와 상당 부분 겹치므로, 하이브리드 위에서 보정의 한계 이득은 dense에서의 $+0.016$이 $+0.0057$ 이하로 수축한다. 결과적으로 하이브리드 위에서 유의하게 남는 것은 modality-gap 변형뿐이며, gold에서는 모든 보정이 ±0.13 CI 안에서 서로 구분되지 않는다(QB-Norm(mul)이 gold 0.764로 점추정 최고이지만 합성에서는 부호조차 사라진다). 이로부터 본 절의 핵심 주장이 나온다: 남은 한계는 *모델 용량이나 추가 모듈*이 아니라 텍스트 측 분포 정렬에 있으며, 소폭 효과의 판별은 gold($N{=}30$)의 낮은 검정력에 제약된다.
 
 ### 6.2 텍스트-only·단일벡터·training-free 설계가 음의 ablation으로 지지된다
 
@@ -174,7 +174,7 @@ LoRA 정렬 이후에도 대조학습 임베딩 공간에는 검색을 저해하
 
 - **양 타워 vs 텍스트-only LoRA 정렬 (학습 축).** 텍스트·vision 양쪽에 LoRA를 부착해도 텍스트-only 대비 MRR 차이가 noise 수준(≈+0.001)에 그치는 반면, vision 타워를 동결할 수 없어 갤러리 캐시가 무효화되고 평가 비용이 ~460ms/query로 커진다. 격차가 텍스트 측에 집중되어 있다는 가정 및 E5-V의 텍스트-only 관찰과 부합한다.
 - **patch-level late interaction vs pooled 단일벡터 (표현 축).** SigLIP 2 patch 토큰에 ColBERT식 MaxSim 재랭킹을 적용해도 개선이 없었다. pooled 벡터에서만 대조 감독을 받은 모델의 patch 신호는 부산물이어서, ColPali류 patch-level 대조 파인튜닝 없이는 late interaction이 부적합하다. DSE의 단일벡터 관찰과 일치한다.
-- **학습형 reranker vs training-free (추론 축).** top-k feature를 학습하는 reranker는 검증 분할에서는 높았으나 gold에서 붕괴했다(과적합). 소규모 데이터 체제에서 학습형 재랭킹이 위험함을 보이며, training-free 추론 선호를 지지한다.
+- **학습형 reranker vs training-free (추론 축).** top-k feature를 학습하는 reranker는 검증 분할에서는 높았으나(MRR 0.877) gold에서 0.504로 붕괴했다(과적합). 소규모 데이터 체제에서 학습형 재랭킹이 위험함을 보이며, training-free 추론 선호를 지지한다.
 
 ### 6.3 더 큰 현대 VLM 임베더가 본 도메인에서 제안 파이프라인을 넘지 못한다
 
@@ -212,7 +212,7 @@ LoRA 정렬 이후에도 대조학습 임베딩 공간에는 검색을 저해하
 
 증거는 이 가설을 강하게 지지한다. 텍스트-only LoRA 정렬은 두 평가 모두에서 zero-shot을 능가했으며, 그 이득은 고검정력 합성 평가에서 $+0.137$ MRR(0.431→0.568, bootstrap $p\approx0$), 비순환 gold에서 $+0.113$ MRR(0.571→0.684, sign-test $p{=}0.013$)로 큰 효과 크기와 함께 확인되었다(그림 1). 같은 도메인에서 미정렬 상태의 훨씬 큰 VLM 임베더(GME-Qwen2VL-2B)는 dense gold 0.467로 zero-shot SigLIP 2(0.571)에도 못 미쳐, best-tuned 하이브리드(0.756) 기준 gold sign-test에서 유의하게 패배했다($p{=}0.007$).
 
-이로부터 핵심 통찰이 도출된다: **좁은 도메인에서는 더 큰 최신 모델이 아니라 도메인 분포 정렬이 검색 품질의 핵심이다.** 부수적으로, LoRA 학습용으로 이미 만든 합성 쿼리 뱅크를 추론 시점 분포 prior로 추가 비용 없이 재활용하는 **뱅크-prior 보정**이 gold 점추정을 ladder 최고(0.760, R@1 0.70)로 끌어올리며, 고검정력 합성에서 modality-gap 변형의 유의한 추가 이득($+0.0057$, $p{<}0.01$)으로 그 효과가 확인된다(보정별 전체 분해는 §6.1).
+이로부터 핵심 통찰이 도출된다: **좁은 도메인에서는 더 큰 최신 모델이 아니라 도메인 분포 정렬이 검색 품질의 핵심이다.** 부수적으로, LoRA 학습용으로 이미 만든 합성 쿼리 뱅크를 추론 시점 분포 prior로 추가 비용 없이 재활용하는 **뱅크-prior 보정**이 gold 점추정을 0.760(R@1 0.70)까지 끌어올리며, 고검정력 합성에서 modality-gap 변형의 유의한 추가 이득($+0.0057$, $p{<}0.01$)으로 그 효과가 확인된다(보정별 전체 분해는 §6.1).
 
 이 결론들은 평가 체제가 정한 경계 안에서 성립한다(§7): gold $N{=}30$의 검정력, 합성 평가의 부분적 순환성, 단일 annotator·단일 갤러리·단일 정답 라벨, 그리고 학습 시점 캡션·쿼리 생성에 대한 의존이 그것이다. 후속 과제는 두 가지다. 첫째, gold 평가를 더 많은 사람 작성 쿼리로 확대하고 타당한 대안 정답까지 사람이 라벨하여 gold의 검정력과 라벨 신뢰성을 동시에 높이는 것이다. 둘째, 뱅크-prior 보정이 본 top-wear 갤러리를 넘어 다른 패션 카테고리·도메인에서도 무비용 이득을 주는지를 검증하는 것이다. 분포 정렬이 더 큰 모델보다 효과적이라는 통찰과 함께, 본 연구는 실서비스에 바로 적용 가능한 단순·경량 분포 정렬 레시피를 제시한다.
 
@@ -225,21 +225,21 @@ LoRA 정렬 이후에도 대조학습 임베딩 공간에는 검색을 저해하
 - Liang et al. *Mind the Gap: Understanding the Modality Gap in Multi-modal Contrastive Representation Learning.* NeurIPS 2022. arXiv:2203.02053.
 - Bogolin et al. *Cross Modal Retrieval with Querybank Normalisation (QB-Norm / Dynamic Inverted Softmax).* CVPR 2022. arXiv:2112.12777.
 - Conneau et al. *Word Translation Without Parallel Data (CSLS).* ICLR 2018. arXiv:1710.04087.
-- Nogueira & Lin. *Document Expansion by Query Prediction (Doc2Query / docTTTTTquery).* 2019.
+- Nogueira et al. *Document Expansion by Query Prediction (Doc2Query).* arXiv:1904.08375, 2019; Nogueira & Lin. *From doc2query to docTTTTTquery.* 2019.
 - Bonifacio et al. *InPars.* SIGIR 2022; Dai et al. *Promptagator.* ICLR 2023.
 - Weller et al. *Promptriever: Instruction-Trained Retrievers Can Be Prompted Like LMs.* ICLR 2025. arXiv:2409.11136.
 - Jiang et al. *E5-V: Universal Embeddings with Multimodal LLMs.* arXiv:2407.12580, 2024.
 - Zhang et al. *GME: Improving Universal Multimodal Retrieval by Multimodal LLMs.* arXiv:2412.16855, 2024.
 - Jiang et al. *VLM2Vec / MMEB.* ICLR 2025. arXiv:2410.05160.
 - Lin et al. *MM-Embed.* ICLR 2025. arXiv:2411.02571.
+- Liu et al. *LamRA: Large Multimodal Model as Your Advanced Retrieval Assistant.* CVPR 2025. arXiv:2412.01720.
 - Faysse et al. *ColPali: Efficient Document Retrieval with Vision Language Models.* ICLR 2025. arXiv:2407.01449.
 - Ma et al. *Unifying Multimodal Retrieval via Document Screenshot Embedding (DSE).* EMNLP 2024. arXiv:2406.11251.
-- Gao et al. *Precise Zero-Shot Dense Retrieval without Relevance Labels (HyDE).* ACL 2023. arXiv:2212.10496.
 - Khattab & Zaharia. *ColBERT.* SIGIR 2020. arXiv:2004.12832.
 - Robertson & Zaragoza. *The Probabilistic Relevance Framework: BM25 and Beyond.* 2009.
 - Yang et al. *Fashion Captioning: Towards Generating Accurate Descriptions with Semantic Rewards (FACAD).* ECCV 2020. arXiv:2008.02693.
 - Rostamzadeh et al. *Fashion-Gen: The Generative Fashion Dataset and Challenge (FashionGen).* 2018. arXiv:1806.08317.
-- Jia et al. *Fashionpedia: Ontology, Segmentation, and an Attribute Localization Dataset (FashionPedia).* ECCV 2020. arXiv:2004.12524.
+- Jia et al. *Fashionpedia: Ontology, Segmentation, and an Attribute Localization Dataset (FashionPedia).* ECCV 2020. arXiv:2004.12276.
 
 *데이터·모델 주기.* 상품 캡션은 GPT-4o(OpenAI)로 생성했고, 학습용 합성 쿼리는 solar-pro3(Upstage)로 생성했으며, 평가 측 합성 쿼리 생성은 EXAONE-3.5-7.8B-Instruct(로컬)로 수행했다.
 
