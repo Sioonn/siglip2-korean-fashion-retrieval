@@ -33,6 +33,7 @@ CONFIG = yaml.safe_load((ROOT / "config.yaml").read_text())
 from src.maxsim import maxsim_score  # noqa: E402
 
 SPLIT_TRAIN = Path(CONFIG["paths"]["split_train"])
+SPLIT_TEST = Path(CONFIG["paths"]["split_test"])
 TRAIN_PAIRS = Path(CONFIG["paths"]["train_pairs_final"])
 VISION_EMB = Path(CONFIG["paths"]["vision_emb"])
 VISION_IDX = Path(CONFIG["paths"]["vision_idx"])
@@ -175,8 +176,13 @@ def main():
     print(f"loaded {len(pairs)} train pairs (after vision filter)")
 
     train_split = json.loads(SPLIT_TRAIN.read_text())
+    test_split = json.loads(SPLIT_TEST.read_text())
     train_pids = {it["product_id"] for it in train_split}
-    pairs = [p for p in pairs if p["product_id"] in train_pids]
+    test_pids = {it["product_id"] for it in test_split}
+    overlap_pids = train_pids & test_pids
+    if overlap_pids:
+        print(f"warning: excluding {len(overlap_pids)} train/test-overlap products from training")
+    pairs = [p for p in pairs if p["product_id"] in train_pids and p["product_id"] not in test_pids]
     print(f"after train-split filter: {len(pairs)} pairs")
 
     print("loading SigLIP 2...")

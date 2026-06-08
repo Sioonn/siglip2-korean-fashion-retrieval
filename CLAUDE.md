@@ -1,5 +1,8 @@
 # Project Context
 
+# alias
+사용자가 프롬프트에 /home/intern0/sion/code/... 로 입력하는건, 현재 너의 컨테이너 안의 ~/code/... 경로와 동일함.
+
 ## What this project is
 - A short-term capstone-style ML experiment on **text-to-image retrieval for Korean fashion products**.
 - Domain: Korean e-commerce (Musinsa) catalogue, top-wear category, with formal AI-generated captions and a small set of real user-style queries that diverge significantly from the captions in tone, length, and content.

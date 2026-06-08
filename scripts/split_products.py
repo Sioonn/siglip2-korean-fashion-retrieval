@@ -37,7 +37,11 @@ def main():
         if it["product_id"] is not None
         and (images_dir / f"{it['product_id']}.jpg").exists()
     ]
-    print(f"products with images: {len(items)}")
+    deduped = {}
+    for it in items:
+        deduped.setdefault(it["product_id"], it)
+    items = list(deduped.values())
+    print(f"unique products with images: {len(items)}")
 
     rng = random.Random(SEED)
     indices = list(range(len(items)))

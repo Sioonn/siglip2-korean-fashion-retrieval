@@ -35,3 +35,8 @@ __pycache__/
 # OS
 .DS_Store
 Thumbs.db
+
+# Novel-track regenerable caches & agent/tool state
+data/novel_cache/
+.claude-octopus/
+.codex/
