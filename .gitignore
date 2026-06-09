@@ -43,3 +43,9 @@ data/novel_cache/
 
 # Internal working docs (drafts, paper, audits) — keep local, not public
 docs/
+
+# Internal memo / agent-instruction files — keep local, not public
+/CLAUDE.md
+/AGENTS.md
+/RESEARCH_HANDOFF_CONTEXT.md
+/explan.md
