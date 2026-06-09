@@ -40,3 +40,6 @@ Thumbs.db
 data/novel_cache/
 .claude-octopus/
 .codex/
+
+# Internal working docs (drafts, paper, audits) — keep local, not public
+docs/
